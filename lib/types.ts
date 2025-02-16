@@ -42,4 +42,43 @@ export interface UpdatePasswordResponse {
 
 export interface ErrorResponse {
     detail: string;
+}
+
+export interface ShortLink {
+    id: string;
+    code: string;
+    original_url: string;
+    short_url: string;
+    created_at: string;
+    visits: number;
+    creator_name: string;
+    description: string;
+    last_visit: string;
+}
+
+export interface ShortLinkResponse {
+    total: number;
+    items: ShortLink[];
+}
+
+export interface Category {
+    id: string;
+    name: string;
+    description: string;
+    article_count: number;
+}
+
+export interface CategoryListResponse {
+    total: number;
+    items: Category[];
+}
+
+export interface CreateCategoryRequest {
+    name: string;
+    description: string;
+}
+
+export interface UpdateCategoryRequest {
+    name: string;
+    description: string;
 } 

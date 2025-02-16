@@ -5,20 +5,52 @@ import { Button } from "@/components/ui/button";
 import { SearchIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { redirect } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { getAuth } from '@/lib/auth';
 import { UserNav } from "@/components/user-nav";
+import { request } from "@/lib/request";
+
+interface SystemSetting {
+    id: number;
+    key: string;
+    value: string;
+    description: string;
+    is_editable: boolean;
+    created_at: string;
+    updated_at: string;
+}
 
 export default function DashboardLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
+    const [systemName, setSystemName] = useState("管理系统");
+
     useEffect(() => {
         const { token } = getAuth();
         if (!token) {
             redirect('/');
         }
+
+        const fetchSystemName = async () => {
+            try {
+                const response = await request<{ items: SystemSetting[] }>('/auth/system/settings');
+                if (response.ok) {
+                    const data = await response.json();
+                    const systemSetting = data.items.find(item => item.key === 'SYSTEM_NAME');
+                    if (systemSetting) {
+                        setSystemName(systemSetting.value);
+                        // 更新页面标题
+                        document.title = systemSetting.value;
+                    }
+                }
+            } catch (error) {
+                console.error('获取系统名称失败:', error);
+            }
+        };
+
+        fetchSystemName();
     }, []);
 
     return (

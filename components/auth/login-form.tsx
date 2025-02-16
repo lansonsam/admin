@@ -80,10 +80,10 @@ function LoginForm() {
                 require_2fa: data.require_2fa,
             });
 
-            // 延迟关闭加载状态和跳转
+            // 延迟重定向
             setTimeout(() => {
                 setIsLoading(false);
-                router.push('/dashboard');
+                window.location.href = '/dashboard';
             }, 1000);
 
         } catch (err) {
@@ -102,7 +102,7 @@ function LoginForm() {
                 )}
             </CardHeader>
             <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                     <div className="space-y-2">
                         <label htmlFor="username" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                             用户名
@@ -116,6 +116,7 @@ function LoginForm() {
                             className="font-normal h-11"
                             disabled={isLoading}
                             required
+                            onInvalid={(e) => e.preventDefault()}
                         />
                     </div>
                     <div className="space-y-2">
@@ -132,6 +133,7 @@ function LoginForm() {
                                 className="font-normal h-11"
                                 disabled={isLoading}
                                 required
+                                onInvalid={(e) => e.preventDefault()}
                             />
                             <Button
                                 type="button"

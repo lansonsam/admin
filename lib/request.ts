@@ -4,7 +4,7 @@ interface RequestOptions extends RequestInit {
     requireAuth?: boolean;
 }
 
-export async function request(url: string, options: RequestOptions = {}) {
+export async function request<T = any>(url: string, options: RequestOptions = {}): Promise<Response & { json: () => Promise<T> }> {
     const { requireAuth = true, ...fetchOptions } = options;
 
     if (requireAuth) {
