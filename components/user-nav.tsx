@@ -17,7 +17,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ChangePasswordForm } from "./change-password";
-import { Toaster } from "sonner";
 import { AvatarUpload } from "./avatar-upload";
 
 interface UserInfo {
@@ -70,12 +69,6 @@ export function UserNav() {
 
     return (
         <>
-            <Toaster
-                position="top-right"
-                expand={true}
-                richColors
-                closeButton
-            />
             <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">{userInfo?.name || ''}</span>
                 <DropdownMenu>

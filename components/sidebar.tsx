@@ -93,17 +93,25 @@ interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> { }
 export function Sidebar({ className }: SidebarProps) {
     const pathname = usePathname();
     const router = useRouter();
-    const [systemName, setSystemName] = useState("");
+    const [systemName, setSystemName] = useState("管理系统");
 
     useEffect(() => {
         const fetchSystemName = async () => {
             try {
+                // 先从本地存储获取
+                const storedName = localStorage.getItem('system_name');
+                if (storedName) {
+                    setSystemName(storedName);
+                }
+
+                // 然后从服务器获取最新值
                 const response = await request<{ items: SystemSetting[] }>('/auth/system/settings');
                 if (response.ok) {
                     const data = await response.json();
                     const systemSetting = data.items.find(item => item.key === 'SYSTEM_NAME');
                     if (systemSetting) {
                         setSystemName(systemSetting.value);
+                        localStorage.setItem('system_name', systemSetting.value);
                     }
                 }
             } catch (error) {
@@ -122,7 +130,7 @@ export function Sidebar({ className }: SidebarProps) {
     };
 
     return (
-        <div className={cn("flex flex-col min-h-screen", className)}>
+        <div className={cn("flex flex-col h-screen fixed left-0 top-0", className)}>
             <div className="flex-1">
                 <div className="px-3 py-2">
                     <h2 className="mb-6 px-4 text-lg font-semibold">{systemName}</h2>
@@ -145,7 +153,7 @@ export function Sidebar({ className }: SidebarProps) {
                     </div>
                 </div>
             </div>
-            <div className="border-t sticky bottom-0 bg-gray-50/40 p-4">
+            <div className="border-t bg-gray-50/40 p-4">
                 <Button
                     variant="ghost"
                     className="w-full justify-start gap-2 text-red-500 hover:text-red-600 hover:bg-red-50"

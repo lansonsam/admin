@@ -17,12 +17,12 @@ import { format } from 'date-fns';
 import { CreateAdminDialog } from '@/components/create-admin-dialog';
 import { UpdatePasswordDialog } from '@/components/update-password-dialog';
 import { Switch } from '@/components/ui/switch';
-import { toast, Toaster } from 'sonner';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { UsersIcon, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { request } from "@/lib/request";
+import { toast } from 'sonner';
 
 export default function UsersPage() {
     const [users, setUsers] = useState<Admin[]>([]);
@@ -42,7 +42,8 @@ export default function UsersPage() {
             setError(errorMessage);
             toast.error('获取用户列表失败', {
                 description: errorMessage,
-                icon: <AlertCircle className="w-4 h-4 text-red-500" />,
+                icon: <AlertCircle className="h-4 w-4 text-red-500" />,
+                duration: 4000,
             });
         } finally {
             setLoading(false);
@@ -59,15 +60,15 @@ export default function UsersPage() {
                     : user
             ));
             toast.success(newStatus ? '用户已启用' : '用户已禁用', {
-                description: `用户状态已成功${newStatus ? '启用' : '禁用'}`,
-                icon: <CheckCircle2 className="w-4 h-4 text-green-500" />,
+                description: `用户状态已${newStatus ? '启用' : '禁用'}`,
+                icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
                 duration: 3000,
             });
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : '更新状态失败';
             toast.error('更新状态失败', {
                 description: errorMessage,
-                icon: <AlertCircle className="w-4 h-4 text-red-500" />,
+                icon: <AlertCircle className="h-4 w-4 text-red-500" />,
                 duration: 4000,
             });
             // 如果失败，重新获取列表以确保数据同步
@@ -89,7 +90,7 @@ export default function UsersPage() {
                 if (data.detail === "不能删除自己") {
                     toast.error('无法删除', {
                         description: '系统不允许删除当前登录的用户账号',
-                        icon: <AlertCircle className="w-4 h-4 text-red-500" />,
+                        icon: <AlertCircle className="h-4 w-4 text-red-500" />,
                         duration: 4000,
                     });
                 } else {
@@ -98,22 +99,21 @@ export default function UsersPage() {
                 return;
             }
 
-            toast.success('用户已删除', {
-                description: `用户 ${userToDelete.name} 已被删除`,
-                icon: <CheckCircle2 className="w-4 h-4 text-green-500" />,
-                duration: 3000,
-            });
             // 从列表中移除被删除的用户
             setUsers(users.filter(user => user.admin_id !== userToDelete.admin_id));
+            toast.success('用户已删除', {
+                description: `用户 ${userToDelete.name} 已被删除`,
+                icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
+                duration: 3000,
+            });
+            setUserToDelete(null);
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : '删除失败';
             toast.error('删除失败', {
                 description: errorMessage,
-                icon: <AlertCircle className="w-4 h-4 text-red-500" />,
+                icon: <AlertCircle className="h-4 w-4 text-red-500" />,
                 duration: 4000,
             });
-        } finally {
-            setUserToDelete(null);
         }
     };
 
@@ -121,22 +121,8 @@ export default function UsersPage() {
         fetchUsers();
     }, []);
 
-    if (loading) {
-        return <div className="flex justify-center items-center min-h-[400px]">加载中...</div>;
-    }
-
-    if (error) {
-        return <div className="text-red-500 text-center min-h-[400px]">{error}</div>;
-    }
-
     return (
-        <div className="p-6 space-y-6">
-            <Toaster
-                position="top-right"
-                expand={true}
-                richColors
-                closeButton
-            />
+        <div>
             <Card>
                 <CardHeader className="border-b">
                     <div className="flex items-center justify-between">
@@ -144,7 +130,10 @@ export default function UsersPage() {
                             <div className="p-2 bg-primary/10 rounded-lg">
                                 <UsersIcon className="w-5 h-5 text-primary" />
                             </div>
-                            <CardTitle>用户管理</CardTitle>
+                            <div>
+                                <CardTitle>用户管理</CardTitle>
+                                <CardDescription>管理系统用户</CardDescription>
+                            </div>
                         </div>
                         <div className="flex items-center gap-4">
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">

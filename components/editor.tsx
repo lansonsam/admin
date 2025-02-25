@@ -257,15 +257,30 @@ const MenuBar = ({ editor }: { editor: any }) => {
     const [selectedColor, setSelectedColor] = useState('#000000');
 
     const handleImageUpload = async (file: File) => {
-        if (!file) return;
-
         try {
             setIsUploading(true);
             const url = await handleEditorImageUpload(file);
-            editor.chain().focus().setImage({ src: url }).run();
+
+            // 先清除当前选区的格式
+            editor?.chain()
+                .focus()
+                .unsetAllMarks() // 清除所有标记（如加粗、斜体等）
+                .command(({ tr, dispatch }) => {
+                    if (dispatch) {
+                        // 创建新的段落节点
+                        tr.insert(tr.selection.from, editor.schema.nodes.paragraph.create());
+                        return true;
+                    }
+                    return false;
+                })
+                .setImage({ src: url })
+                .insertContent({ type: 'paragraph' })
+                .focus()
+                .run();
+
             toast.success('图片上传成功');
         } catch (error) {
-            toast.error('上传图片失败', {
+            toast.error('上传失败', {
                 description: error instanceof Error ? error.message : '未知错误'
             });
         } finally {
@@ -406,30 +421,6 @@ const MenuBar = ({ editor }: { editor: any }) => {
             <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => {
-                    const input = document.createElement('input');
-                    input.type = 'file';
-                    input.accept = 'image/*';
-                    input.onchange = (e) => {
-                        const file = (e.target as HTMLInputElement).files?.[0];
-                        if (file) {
-                            handleImageUpload(file);
-                        }
-                    };
-                    input.click();
-                }}
-                disabled={isUploading}
-                title="插入图片"
-            >
-                {isUploading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                    <ImageIcon className="h-4 w-4" />
-                )}
-            </Button>
-            <Button
-                variant="ghost"
-                size="icon"
                 onClick={() => editor.chain().focus().toggleBlockquote().run()}
                 className={cn(editor.isActive('blockquote') && 'bg-accent')}
                 title="引用"
@@ -555,6 +546,7 @@ const MenuBar = ({ editor }: { editor: any }) => {
 interface TipTapEditorProps {
     content?: string;
     onChange?: (content: string) => void;
+    autoSave?: boolean;
 }
 
 const ImagePreview = ({ src, onClose }: { src: string; onClose: () => void }) => {
@@ -587,22 +579,10 @@ const ImagePreview = ({ src, onClose }: { src: string; onClose: () => void }) =>
 const TipTapEditor: FC<TipTapEditorProps> = ({
     content = '',
     onChange,
+    autoSave = true,
 }) => {
     const [isUploading, setIsUploading] = useState(false);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
-
-    // 从 localStorage 获取保存的内容
-    const getSavedContent = () => {
-        if (typeof window === 'undefined') return content;
-        const saved = localStorage.getItem('editor-content');
-        return saved || content;
-    };
-
-    // 保存内容到 localStorage
-    const saveContent = (html: string) => {
-        if (typeof window === 'undefined') return;
-        localStorage.setItem('editor-content', html);
-    };
 
     const editor = useEditor({
         extensions: [
@@ -624,15 +604,19 @@ const TipTapEditor: FC<TipTapEditorProps> = ({
             Color,
             HiddenText,
         ],
-        content: getSavedContent(),
+        content,
         onUpdate: ({ editor }) => {
             const html = editor.getHTML();
             onChange?.(html);
-            saveContent(html);
+
+            // 只在启用自动保存时保存内容
+            if (autoSave) {
+                localStorage.setItem('editor-content', html);
+            }
         },
         editorProps: {
             attributes: {
-                class: 'prose prose-sm max-w-none focus:outline-none min-h-[300px] px-4 py-2',
+                class: 'prose prose-sm max-w-none focus:outline-none min-h-[300px] px-4 py-2 [&_.ProseMirror-focused]:caret-primary [&_.ProseMirror-focused]:caret-[1px]',
             },
             handleDrop: (view, event, slice, moved) => {
                 const handleDropAsync = async () => {
@@ -640,12 +624,25 @@ const TipTapEditor: FC<TipTapEditorProps> = ({
                         const file = event.dataTransfer.files[0];
                         if (file.type.startsWith('image/')) {
                             event.preventDefault();
-                            const url = await handleEditorImageUpload(file);
-                            if (url) {
-                                const { schema } = view.state;
-                                const node = schema.nodes.image.create({ src: url });
-                                const transaction = view.state.tr.replaceSelectionWith(node);
-                                view.dispatch(transaction);
+                            try {
+                                const url = await handleEditorImageUpload(file);
+                                if (url) {
+                                    const { schema } = view.state;
+                                    const imageNode = schema.nodes.image.create({ src: url });
+                                    const paragraphNode = schema.nodes.paragraph.create();
+                                    const transaction = view.state.tr
+                                        .replaceSelectionWith(imageNode)
+                                        .insert(view.state.selection.from, paragraphNode)
+                                        .scrollIntoView();
+                                    view.dispatch(transaction);
+                                    // 确保光标可见
+                                    view.focus();
+                                    toast.success('图片上传成功');
+                                }
+                            } catch (error) {
+                                toast.error('上传失败', {
+                                    description: error instanceof Error ? error.message : '未知错误'
+                                });
                             }
                         }
                     }
@@ -659,12 +656,25 @@ const TipTapEditor: FC<TipTapEditorProps> = ({
                         const file = event.clipboardData.files[0];
                         if (file.type.startsWith('image/')) {
                             event.preventDefault();
-                            const url = await handleEditorImageUpload(file);
-                            if (url) {
-                                const { schema } = view.state;
-                                const node = schema.nodes.image.create({ src: url });
-                                const transaction = view.state.tr.replaceSelectionWith(node);
-                                view.dispatch(transaction);
+                            try {
+                                const url = await handleEditorImageUpload(file);
+                                if (url) {
+                                    const { schema } = view.state;
+                                    const imageNode = schema.nodes.image.create({ src: url });
+                                    const paragraphNode = schema.nodes.paragraph.create();
+                                    const transaction = view.state.tr
+                                        .replaceSelectionWith(imageNode)
+                                        .insert(view.state.selection.from, paragraphNode)
+                                        .scrollIntoView();
+                                    view.dispatch(transaction);
+                                    // 确保光标可见
+                                    view.focus();
+                                    toast.success('图片上传成功');
+                                }
+                            } catch (error) {
+                                toast.error('上传失败', {
+                                    description: error instanceof Error ? error.message : '未知错误'
+                                });
                             }
                         }
                     }
@@ -675,27 +685,26 @@ const TipTapEditor: FC<TipTapEditorProps> = ({
         },
     });
 
+    // 监听 content prop 的变化
+    useEffect(() => {
+        if (editor && content !== editor.getHTML()) {
+            editor.commands.setContent(content);
+        }
+    }, [content, editor]);
+
     // 清除保存的内容
     const clearSavedContent = () => {
-        if (typeof window === 'undefined') return;
         localStorage.removeItem('editor-content');
     };
 
-    // 监听页面卸载事件
+    // 在组件卸载时清除保存的内容
     useEffect(() => {
-        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-            const savedContent = localStorage.getItem('editor-content');
-            if (savedContent && savedContent !== content) {
-                e.preventDefault();
-                e.returnValue = '您有未保存的更改，确定要离开吗？';
+        return () => {
+            if (autoSave) {
+                clearSavedContent();
             }
         };
-
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        return () => {
-            window.removeEventListener('beforeunload', handleBeforeUnload);
-        };
-    }, [content]);
+    }, [autoSave]);
 
     useEffect(() => {
         window.handleImageClick = (src: string) => {

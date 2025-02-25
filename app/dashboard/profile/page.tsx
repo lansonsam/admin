@@ -7,7 +7,6 @@ import { getAuth } from '@/lib/auth';
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Mail, Shield, User, Key } from "lucide-react";
-import { Toaster } from "sonner";
 
 interface UserInfo {
     name: string;
@@ -65,12 +64,6 @@ export default function ProfilePage() {
 
     return (
         <div className="p-6 space-y-6">
-            <Toaster
-                position="top-right"
-                expand={true}
-                richColors
-                closeButton
-            />
             <div className="space-y-8">
                 <div className="flex justify-between items-start">
                     <div>

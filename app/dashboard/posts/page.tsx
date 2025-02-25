@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Image as ImageIcon, Loader2, Pencil, Trash2, Plus } from "lucide-react";
+import { Image as ImageIcon, Loader2, Pencil, Trash2, Plus, FileText } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -200,7 +200,7 @@ export default function PostsPage() {
 
             const formData = new FormData();
             formData.append('title', sanitizedTitle);
-            formData.append('content', sanitizedContent);
+            formData.append('content', `<p class="隐藏">${sanitizedContent}</p>`);
             formData.append('category_id', editArticle.article.category_id);
 
             const response = await request<Article>(`/auth/admin/article/update/${editArticle.article.id}`, {
@@ -233,7 +233,7 @@ export default function PostsPage() {
         setLoading(true);
 
         try {
-            const response = await request(`/auth/admin/articles/${deleteDialog.article.id}`, {
+            const response = await request(`/auth/admin/article/delete/${deleteDialog.article.id}`, {
                 method: 'DELETE',
             });
 
@@ -256,95 +256,95 @@ export default function PostsPage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold">文章管理</h1>
-                <p className="text-sm text-muted-foreground mt-2">管理和发布文章内容</p>
-            </div>
-
-            <Separator />
-
-            <div className="grid gap-6">
-                <Card>
-                    <CardHeader className="space-y-1">
-                        <div className="flex items-center justify-between">
+            <Card>
+                <CardHeader className="border-b">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <div className="p-2 bg-primary/10 rounded-lg">
+                                <FileText className="w-5 h-5 text-primary" />
+                            </div>
                             <div>
-                                <CardTitle className="text-2xl">文章列表</CardTitle>
-                                <CardDescription>共 {total} 篇文章</CardDescription>
+                                <CardTitle>文章管理</CardTitle>
+                                <CardDescription>管理和发布文章内容</CardDescription>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <span>总文章数</span>
+                                <span className="font-medium text-foreground">{total}</span>
                             </div>
                             <Button onClick={() => router.push('/dashboard/posts/create')}>
                                 <Plus className="mr-2 h-4 w-4" />
                                 写文章
                             </Button>
                         </div>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="rounded-lg border">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>封面</TableHead>
-                                        <TableHead>标题</TableHead>
-                                        <TableHead>分类</TableHead>
-                                        <TableHead>状态</TableHead>
-                                        <TableHead>创建时间</TableHead>
-                                        <TableHead>更新时间</TableHead>
-                                        <TableHead className="text-right">操作</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {articles.map((article) => (
-                                        <TableRow key={article.id}>
-                                            <TableCell>
-                                                {article.cover_url ? (
-                                                    <img
-                                                        src={article.cover_url}
-                                                        alt={article.title}
-                                                        className="w-12 h-12 object-cover rounded"
-                                                    />
-                                                ) : (
-                                                    <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center">
-                                                        <ImageIcon className="h-6 w-6 text-gray-400" />
-                                                    </div>
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="font-medium">{article.title}</TableCell>
-                                            <TableCell>{article.category_name}</TableCell>
-                                            <TableCell>
-                                                <span className={article.status === 'published' ? 'text-green-600' : 'text-yellow-600'}>
-                                                    {article.status === 'published' ? '已发布' : '草稿'}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell>{article.created_at}</TableCell>
-                                            <TableCell>{article.updated_at}</TableCell>
-                                            <TableCell>
-                                                <div className="flex justify-end gap-2">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        title="编辑文章"
-                                                        onClick={() => setEditArticle({ open: true, article })}
-                                                    >
-                                                        <Pencil className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                                        title="删除文章"
-                                                        onClick={() => setDeleteDialog({ open: true, article })}
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
+                    </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="hover:bg-transparent">
+                                <TableHead>封面</TableHead>
+                                <TableHead>标题</TableHead>
+                                <TableHead>分类</TableHead>
+                                <TableHead>状态</TableHead>
+                                <TableHead>创建时间</TableHead>
+                                <TableHead>更新时间</TableHead>
+                                <TableHead className="text-right">操作</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {articles.map((article) => (
+                                <TableRow key={article.id} className="group">
+                                    <TableCell>
+                                        {article.cover_url ? (
+                                            <img
+                                                src={article.cover_url}
+                                                alt={article.title}
+                                                className="w-12 h-12 object-cover rounded"
+                                            />
+                                        ) : (
+                                            <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center">
+                                                <ImageIcon className="h-6 w-6 text-gray-400" />
+                                            </div>
+                                        )}
+                                    </TableCell>
+                                    <TableCell className="font-medium">{article.title}</TableCell>
+                                    <TableCell>{article.category_name}</TableCell>
+                                    <TableCell>
+                                        <span className={article.status === 'published' ? 'text-green-600' : 'text-yellow-600'}>
+                                            {article.status === 'published' ? '已发布' : '草稿'}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell>{article.created_at}</TableCell>
+                                    <TableCell>{article.updated_at}</TableCell>
+                                    <TableCell>
+                                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                title="编辑文章"
+                                                onClick={() => setEditArticle({ open: true, article })}
+                                            >
+                                                <Pencil className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                                title="删除文章"
+                                                onClick={() => setDeleteDialog({ open: true, article })}
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
 
             {/* 编辑文章对话框 */}
             <Dialog open={editArticle.open} onOpenChange={(open) => setEditArticle({ open, article: open ? editArticle.article : null })}>
@@ -358,7 +358,7 @@ export default function PostsPage() {
                             <Label htmlFor="edit-title">文章标题</Label>
                             <Input
                                 id="edit-title"
-                                value={editArticle.article?.title}
+                                value={editArticle.article?.title || ''}
                                 onChange={(e) => setEditArticle(prev => ({
                                     ...prev,
                                     article: prev.article ? { ...prev.article, title: e.target.value } : null

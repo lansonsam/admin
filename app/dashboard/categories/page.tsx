@@ -178,110 +178,112 @@ export default function CategoriesPage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold">分类管理</h1>
-                <p className="text-sm text-muted-foreground mt-2">管理文章分类</p>
-            </div>
-
-            <Separator />
-
             <Card>
-                <CardHeader className="space-y-1">
+                <CardHeader className="border-b">
                     <div className="flex items-center justify-between">
-                        <div>
-                            <CardTitle className="text-2xl">分类列表</CardTitle>
-                            <CardDescription>共 {total} 个分类</CardDescription>
+                        <div className="flex items-center gap-2">
+                            <div className="p-2 bg-primary/10 rounded-lg">
+                                <FolderPlus className="w-5 h-5 text-primary" />
+                            </div>
+                            <div>
+                                <CardTitle>分类管理</CardTitle>
+                                <CardDescription>管理文章分类</CardDescription>
+                            </div>
                         </div>
-                        <Dialog>
-                            <DialogTrigger asChild>
-                                <Button>
-                                    <FolderPlus className="mr-2 h-4 w-4" />
-                                    创建分类
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>创建新分类</DialogTitle>
-                                    <DialogDescription>添加一个新的文章分类</DialogDescription>
-                                </DialogHeader>
-                                <form onSubmit={handleCreateCategory} className="space-y-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="name">分类名称</Label>
-                                        <Input
-                                            id="name"
-                                            value={newCategory.name}
-                                            onChange={(e) => setNewCategory(prev => ({ ...prev, name: e.target.value }))}
-                                            placeholder="请输入分类名称"
-                                            required
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="description">分类描述</Label>
-                                        <Textarea
-                                            id="description"
-                                            value={newCategory.description}
-                                            onChange={(e) => setNewCategory(prev => ({ ...prev, description: e.target.value }))}
-                                            placeholder="请输入分类描述"
-                                        />
-                                    </div>
-                                    <DialogFooter>
-                                        <Button type="submit" disabled={loading}>
-                                            {loading ? (
-                                                <>
-                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                    创建中...
-                                                </>
-                                            ) : '创建分类'}
-                                        </Button>
-                                    </DialogFooter>
-                                </form>
-                            </DialogContent>
-                        </Dialog>
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <span>总分类数</span>
+                                <span className="font-medium text-foreground">{total}</span>
+                            </div>
+                            <Dialog>
+                                <DialogTrigger asChild>
+                                    <Button>
+                                        <FolderPlus className="mr-2 h-4 w-4" />
+                                        创建分类
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>创建新分类</DialogTitle>
+                                        <DialogDescription>添加一个新的文章分类</DialogDescription>
+                                    </DialogHeader>
+                                    <form onSubmit={handleCreateCategory} className="space-y-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="name">分类名称</Label>
+                                            <Input
+                                                id="name"
+                                                value={newCategory.name}
+                                                onChange={(e) => setNewCategory(prev => ({ ...prev, name: e.target.value }))}
+                                                placeholder="请输入分类名称"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="description">分类描述</Label>
+                                            <Textarea
+                                                id="description"
+                                                value={newCategory.description}
+                                                onChange={(e) => setNewCategory(prev => ({ ...prev, description: e.target.value }))}
+                                                placeholder="请输入分类描述"
+                                            />
+                                        </div>
+                                        <DialogFooter>
+                                            <Button type="submit" disabled={loading}>
+                                                {loading ? (
+                                                    <>
+                                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                        创建中...
+                                                    </>
+                                                ) : '创建分类'}
+                                            </Button>
+                                        </DialogFooter>
+                                    </form>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
                     </div>
                 </CardHeader>
-                <CardContent>
-                    <div className="rounded-lg border">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>分类名称</TableHead>
-                                    <TableHead>描述</TableHead>
-                                    <TableHead>文章数量</TableHead>
-                                    <TableHead className="text-right">操作</TableHead>
+                <CardContent className="p-0">
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="hover:bg-transparent">
+                                <TableHead>分类名称</TableHead>
+                                <TableHead>描述</TableHead>
+                                <TableHead>文章数量</TableHead>
+                                <TableHead className="text-right">操作</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {categories.map((category) => (
+                                <TableRow key={category.id} className="group">
+                                    <TableCell className="font-medium">{category.name}</TableCell>
+                                    <TableCell>{category.description}</TableCell>
+                                    <TableCell>{category.article_count}</TableCell>
+                                    <TableCell>
+                                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                title="编辑分类"
+                                                onClick={() => setEditCategory({ open: true, category })}
+                                            >
+                                                <Pencil className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                                title="删除分类"
+                                                onClick={() => setDeleteDialog({ open: true, category })}
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </TableCell>
                                 </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {categories.map((category) => (
-                                    <TableRow key={category.id}>
-                                        <TableCell className="font-medium">{category.name}</TableCell>
-                                        <TableCell>{category.description}</TableCell>
-                                        <TableCell>{category.article_count}</TableCell>
-                                        <TableCell>
-                                            <div className="flex justify-end gap-2">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    title="编辑分类"
-                                                    onClick={() => setEditCategory({ open: true, category })}
-                                                >
-                                                    <Pencil className="h-4 w-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                                    title="删除分类"
-                                                    onClick={() => setDeleteDialog({ open: true, category })}
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
+                            ))}
+                        </TableBody>
+                    </Table>
                 </CardContent>
             </Card>
 

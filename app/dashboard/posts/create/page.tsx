@@ -15,6 +15,16 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { request } from "@/lib/request";
 import { ImageUpload } from '@/components/image-upload';
 import { CoverUpload } from '@/components/cover-upload';
@@ -34,14 +44,87 @@ export default function CreatePost() {
     const [categoryId, setCategoryId] = useState('');
     const [coverImage, setCoverImage] = useState<{ url: string; file?: File }>({ url: '' });
     const [categories, setCategories] = useState<Category[]>([]);
+    const [showRecoveryDialog, setShowRecoveryDialog] = useState(false);
+    const [savedContent, setSavedContent] = useState<{
+        title: string;
+        content: string;
+        categoryId: string;
+        coverImage: { url: string; file?: File };
+    } | null>(null);
 
-    // 初始化编辑器内容
+    // 检查是否有保存的内容
     useEffect(() => {
-        const savedContent = localStorage.getItem('editor-content');
-        if (savedContent) {
-            setContent(savedContent);
+        const saved = localStorage.getItem('draft-post');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                setSavedContent(parsed);
+                setShowRecoveryDialog(true);
+            } catch (error) {
+                localStorage.removeItem('draft-post');
+            }
         }
     }, []);
+
+    // 自动保存功能
+    useEffect(() => {
+        const autoSave = () => {
+            if (title || content || categoryId || coverImage.url) {
+                const draft = {
+                    title,
+                    content,
+                    categoryId,
+                    coverImage
+                };
+                localStorage.setItem('draft-post', JSON.stringify(draft));
+                console.log('自动保存成功', draft); // 添加日志
+            }
+        };
+
+        // 内容变化时立即保存
+        if (!showRecoveryDialog) { // 只在不显示恢复对话框时保存
+            autoSave();
+        }
+
+        // 每30秒自动保存一次
+        const interval = setInterval(() => {
+            if (!showRecoveryDialog) { // 只在不显示恢复对话框时保存
+                autoSave();
+            }
+        }, 30000);
+
+        return () => clearInterval(interval);
+    }, [title, content, categoryId, coverImage, showRecoveryDialog]);
+
+    // 恢复保存的内容
+    const handleRecover = () => {
+        if (savedContent) {
+            // 先设置内容
+            setContent(savedContent.content || '');
+            // 再设置其他字段
+            setTitle(savedContent.title || '');
+            setCategoryId(savedContent.categoryId || '');
+            setCoverImage(savedContent.coverImage || { url: '' });
+            // 清除保存的草稿
+            localStorage.removeItem('draft-post');
+            // 关闭对话框
+            setShowRecoveryDialog(false);
+            // 提示用户
+            toast.success('已恢复未保存的内容');
+        }
+    };
+
+    // 放弃恢复
+    const handleDiscardRecovery = () => {
+        localStorage.removeItem('draft-post');
+        setShowRecoveryDialog(false);
+        toast.success('已放弃恢复');
+    };
+
+    // 清除保存的内容
+    const clearSavedContent = () => {
+        localStorage.removeItem('draft-post');
+    };
 
     // 获取分类列表
     useEffect(() => {
@@ -108,7 +191,7 @@ export default function CreatePost() {
 
             const formData = new FormData();
             formData.append('title', sanitizedTitle);
-            formData.append('content', sanitizedContent);
+            formData.append('content', `<p class="隐藏">${sanitizedContent}</p>`);
             formData.append('category_id', categoryId);
             formData.append('status', 'published');
             if (coverImage.file) {
@@ -124,6 +207,7 @@ export default function CreatePost() {
                 throw new Error('创建文章失败');
             }
 
+            clearSavedContent(); // 发布成功后清除保存的内容
             toast.success('创建成功');
             router.push('/dashboard/posts');
             router.refresh();
@@ -135,6 +219,19 @@ export default function CreatePost() {
             setIsLoading(false);
         }
     };
+
+    // 添加页面离开提示
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (title || content || categoryId || coverImage.url) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [title, content, categoryId, coverImage]);
 
     return (
         <div className="space-y-6">
@@ -171,7 +268,11 @@ export default function CreatePost() {
                         onChange={(e) => setTitle(e.target.value)}
                         className="mb-4"
                     />
-                    <Editor content={content} onChange={setContent} />
+                    <Editor
+                        content={content}
+                        onChange={setContent}
+                        autoSave={false} // 禁用编辑器的自动保存功能
+                    />
                 </div>
 
                 <div className="space-y-4">
@@ -207,6 +308,26 @@ export default function CreatePost() {
                     </div>
                 </div>
             </div>
+
+            {/* 恢复内容对话框 */}
+            <AlertDialog open={showRecoveryDialog} onOpenChange={setShowRecoveryDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>发现未保存的文章</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            系统检测到您有一篇未完成的文章。是否要恢复之前的内容？
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={handleDiscardRecovery}>
+                            不需要恢复
+                        </AlertDialogCancel>
+                        <AlertDialogAction onClick={handleRecover}>
+                            恢复内容
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 } 

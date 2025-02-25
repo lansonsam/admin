@@ -1,5 +1,7 @@
 import { AdminListResponse, CreateAdminRequest, CreateAdminResponse, UpdateAdminStatusRequest, UpdateAdminStatusResponse, UpdatePasswordRequest, UpdatePasswordResponse, ErrorResponse } from './types';
 import { getAuth } from './auth';
+import { request } from './request';
+import type { CommentListResponse } from './types';
 
 async function handleApiError(response: Response): Promise<never> {
     try {
@@ -100,4 +102,41 @@ export async function updateAdminPassword(adminId: string, data: UpdatePasswordR
     }
 
     return response.json();
-} 
+}
+
+// 获取评论列表
+export const getCommentList = async () => {
+    const response = await request<CommentListResponse>('/auth/admin/comment/list');
+    if (!response.ok) {
+        throw new Error('获取评论列表失败');
+    }
+    return response.json();
+};
+
+// 更新评论可见性
+export const updateCommentVisibility = async (id: number, isVisible: boolean) => {
+    const response = await request(`/auth/admin/comment/${id}/visibility`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ is_visible: isVisible }),
+    });
+
+    if (!response.ok) {
+        throw new Error('更新评论可见性失败');
+    }
+    return response.json();
+};
+
+// 删除评论
+export const deleteComment = async (id: number) => {
+    const response = await request(`/auth/admin/comment/${id}`, {
+        method: 'DELETE',
+    });
+
+    if (!response.ok) {
+        throw new Error('删除评论失败');
+    }
+    return response.json();
+}; 

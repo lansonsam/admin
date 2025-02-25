@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { getAuth } from '@/lib/auth';
 import { Loader2, Edit2, Eye, EyeOff, SettingsIcon } from "lucide-react";
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 import { request } from '@/lib/request';
 
 interface SystemSetting {
@@ -85,19 +85,26 @@ export default function SettingsPage() {
                 if (!response.ok) {
                     throw new Error('更新失败');
                 }
+
+                // 更新本地存储的系统名称
+                localStorage.setItem('system_name', editValue);
+
+                // 显示成功提示
+                toast.success('系统名称已更新');
             } else {
                 // TODO: 实现其他设置的保存API调用
                 await new Promise(resolve => setTimeout(resolve, 1000)); // 模拟保存
+                toast.success('设置已更新');
             }
 
             setSettings(settings.map(setting =>
                 setting.id === editingSetting.id ? { ...setting, value: editValue } : setting
             ));
             setEditingSetting(null);
-            toast.success('设置已更新');
         } catch (error) {
-            toast.error('保存失败');
-            console.error('Failed to save setting:', error);
+            toast.error('保存失败', {
+                description: error instanceof Error ? error.message : '未知错误'
+            });
         } finally {
             setSaving(false);
         }
@@ -130,7 +137,26 @@ export default function SettingsPage() {
     };
 
     const handleTestEmail = async () => {
-        toast.success('测试邮件已发送');
+        try {
+            // 发送测试邮件的 API 调用
+            const response = await request('/auth/system/email/test', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(emailSettings)
+            });
+
+            if (response.ok) {
+                toast.success('测试邮件已发送');
+            } else {
+                throw new Error('发送测试邮件失败');
+            }
+        } catch (error) {
+            toast.error('发送失败', {
+                description: error instanceof Error ? error.message : '未知错误'
+            });
+        }
     };
 
     const isSensitive = (key: string) => {
@@ -168,14 +194,6 @@ export default function SettingsPage() {
             [id]: !prev[id]
         }));
     };
-
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-        );
-    }
 
     const mailSettings = settings.filter(s => s.key.startsWith('MAIL_'));
     const systemSettings = settings.filter(s => !s.key.startsWith('MAIL_'));
@@ -250,23 +268,28 @@ export default function SettingsPage() {
     };
 
     return (
-        <div className="p-6 space-y-6">
-            <Toaster
-                position="top-right"
-                expand={true}
-                richColors
-                closeButton
-            />
+        <div>
             <Card>
                 <CardHeader className="border-b">
-                    <div className="flex items-center gap-2">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                            <SettingsIcon className="w-5 h-5 text-primary" />
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <div className="p-2 bg-primary/10 rounded-lg">
+                                <SettingsIcon className="w-5 h-5 text-primary" />
+                            </div>
+                            <div>
+                                <CardTitle>系统设置</CardTitle>
+                                <CardDescription>管理系统基本配置</CardDescription>
+                            </div>
                         </div>
-                        <CardTitle>系统设置</CardTitle>
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <span>总配置项</span>
+                                <span className="font-medium text-foreground">{settings.length}</span>
+                            </div>
+                        </div>
                     </div>
                 </CardHeader>
-                <CardContent className="p-6">
+                <CardContent>
                     <Tabs defaultValue="system" className="space-y-6">
                         <TabsList>
                             <TabsTrigger value="system">基本设置</TabsTrigger>

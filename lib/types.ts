@@ -81,4 +81,21 @@ export interface CreateCategoryRequest {
 export interface UpdateCategoryRequest {
     name: string;
     description: string;
+}
+
+export interface Comment {
+    comment_id: number;
+    content: string;
+    nickname: string;
+    email: string | null;
+    article_id: number;
+    is_visible: boolean;
+    ip_address: string;
+    user_agent: string;
+    created_at: string;
+}
+
+export interface CommentListResponse {
+    items: Comment[];
+    total: number;
 } 
